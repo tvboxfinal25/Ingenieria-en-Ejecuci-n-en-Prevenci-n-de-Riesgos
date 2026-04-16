@@ -363,8 +363,7 @@ export default function App() {
     const footerY = doc.internal.pageSize.getHeight() - 15;
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
-    doc.text('Ingeniería en Ejecución en Prevención de Riesgos - Universidad de Atacama | Sede Vallenar', pageWidth / 2, footerY, { align: 'center' });
-    doc.text('Impulsando la ética y el juicio profesional en la Ingeniería de Prevención de Riesgos', pageWidth / 2, footerY + 5, { align: 'center' });
+    doc.text('CREADO POR: ADRIANA SÁNCHEZ, DOCENTE DE ÉTICA PROFESIONAL, UNIVERSIDAD DE ATACAMA, SEDE VALLENAR, 2026', pageWidth / 2, footerY, { align: 'center' });
 
     doc.save(`Resultado_Integridad_${user.name || 'Estudiante'}.pdf`);
   };
@@ -452,11 +451,8 @@ export default function App() {
 
       {/* Footer */}
       <footer className="mt-12 py-8 border-t border-white/10 text-center space-y-2 opacity-60">
-        <p className="text-xs font-medium tracking-widest uppercase">
-          Ingeniería en Ejecución en Prevención de Riesgos - Universidad de Atacama | Sede Vallenar
-        </p>
         <p className="text-[10px] uppercase tracking-[0.2em]">
-          Educación basada en la autorregulación y el juicio ético profesional
+          CREADO POR: ADRIANA SÁNCHEZ, DOCENTE DE ÉTICA PROFESIONAL, UNIVERSIDAD DE ATACAMA, SEDE VALLENAR, 2026.
         </p>
       </footer>
 
