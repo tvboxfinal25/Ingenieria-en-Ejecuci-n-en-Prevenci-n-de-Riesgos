@@ -254,6 +254,13 @@ export default function App() {
   const [isExpertOpen, setIsExpertOpen] = useState(false);
   const [step, setStep] = useState(0);
 
+  const addPoints = (amount: number) => {
+    setUser(prev => ({
+      ...prev,
+      points: prev.points + amount
+    }));
+  };
+
   const currentModule = currentModuleIndex >= 0 ? MODULES[currentModuleIndex] : null;
 
   const handleNext = () => {
@@ -333,39 +340,139 @@ export default function App() {
   const generatePDF = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Header
+    // --- Styles & Palette ---
+    const colors = {
+      navy: [26, 42, 108],
+      cyan: [0, 242, 254],
+      green: [74, 222, 128],
+      orange: [253, 187, 45],
+      dark: [30, 41, 59],
+      gray: [100, 116, 139],
+      light: [248, 250, 252]
+    };
+
+    // Header Background
+    doc.setFillColor(colors.navy[0], colors.navy[1], colors.navy[2]);
+    doc.rect(0, 0, pageWidth, 45, 'F');
+
+    // Accent line
+    doc.setFillColor(colors.cyan[0], colors.cyan[1], colors.cyan[2]);
+    doc.rect(0, 45, pageWidth, 2, 'F');
+
+    // Title
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
-    doc.setTextColor(59, 130, 246);
-    doc.text('Informe de Integridad Profesional', pageWidth / 2, 20, { align: 'center' });
+    doc.text('INFORME DE INTEGRIDAD PROFESIONAL', pageWidth / 2, 22, { align: 'center' });
     
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('BITÁCORA ÉTICA - PROYECTO PLANTA VALLENAR', pageWidth / 2, 32, { align: 'center' });
+
+    // --- Section: User Identity ---
+    doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
     doc.setFontSize(14);
-    doc.setTextColor(60, 60, 60);
-    doc.text(`Estudiante: ${user.name || 'Invitado'}`, 20, 35);
-    doc.text(`Fecha: ${new Date().toLocaleDateString('es-CL')}`, 20, 42);
+    doc.setFont('helvetica', 'bold');
+    doc.text('IDENTIFICACIÓN DEL PROFESIONAL', 20, 65);
     
-    // Stats
-    doc.text('Resultados de Gamificación:', 20, 55);
+    doc.setDrawColor(colors.cyan[0], colors.cyan[1], colors.cyan[2]);
+    doc.setLineWidth(0.5);
+    doc.line(20, 68, 80, 68);
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(colors.gray[0], colors.gray[1], colors.gray[2]);
+    doc.text('Nombre del Ingeniero:', 20, 80);
+    doc.text('Fecha de Auditoría:', 20, 88);
+    doc.text('Rango Alcanzado:', 20, 96);
+
+    doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.text(user.name || 'Estudiante Invitado', 70, 80);
+    doc.text(new Date().toLocaleDateString('es-CL'), 70, 88);
+    doc.setTextColor(colors.navy[0], colors.navy[1], colors.navy[2]);
+    doc.text(GET_RANK(user.points).toUpperCase(), 70, 96);
+
+    // --- Section: Mastery Stats ---
+    doc.setFillColor(colors.light[0], colors.light[1], colors.light[2]);
+    doc.roundedRect(20, 108, 170, 30, 3, 3, 'F');
+    
+    doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
+    doc.setFontSize(10);
+    doc.text('PUNTAJE DE MAESTRÍA', 35, 120);
+    doc.text('INSIGNIAS DE COMPETENCIA', 115, 120);
+
+    doc.setFontSize(18);
+    doc.setTextColor(colors.cyan[0], colors.cyan[1], colors.cyan[2]);
+    doc.text(`${user.points} pts`, 35, 130);
+    doc.setTextColor(colors.orange[0], colors.orange[1], colors.orange[2]);
+    doc.text(`${user.unlockedBadges.length} / ${BADGES.length}`, 115, 130);
+
+    // --- Section: Achievement List ---
+    doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('GABINETE DE LOGROS ÉTICOS', 20, 155);
+    doc.setDrawColor(colors.orange[0], colors.orange[1], colors.orange[2]);
+    doc.line(20, 158, 80, 158);
+
+    let badgeY = 170;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    
+    if (user.unlockedBadges.length === 0) {
+      doc.setTextColor(colors.gray[0], colors.gray[1], colors.gray[2]);
+      doc.text('No se han registrado insignias en esta sesión.', 25, badgeY);
+    } else {
+      user.unlockedBadges.forEach((bId) => {
+        const b = BADGES.find(badge => badge.id === bId);
+        if (b) {
+          doc.setFillColor(colors.green[0], colors.green[1], colors.green[2]);
+          doc.circle(25, badgeY - 1, 1.5, 'F');
+          
+          doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
+          doc.setFont('helvetica', 'bold');
+          doc.text(b.name, 35, badgeY);
+          
+          doc.setTextColor(colors.gray[0], colors.gray[1], colors.gray[2]);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`: ${b.description}`, 35 + doc.getTextWidth(b.name), badgeY);
+          badgeY += 8;
+        }
+      });
+    }
+
+    // --- Section: Conclusion ---
+    const conclusionY = pageHeight - 65;
+    doc.setFillColor(colors.navy[0], colors.navy[1], colors.navy[2]);
+    doc.rect(20, conclusionY, 170, 0.5, 'F');
+
     doc.setFontSize(12);
-    doc.text(`- Puntaje Final: ${user.points} pts`, 30, 65);
-    doc.text(`- Logros Desbloqueados: ${user.unlockedBadges.length} / ${BADGES.length}`, 30, 72);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(colors.navy[0], colors.navy[1], colors.navy[2]);
+    doc.text('SENTENCIA ÉTICA PROFESIONAL', pageWidth / 2, conclusionY + 10, { align: 'center' });
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
     
-    // Badges list
-    doc.text('Insignias Obtenidas:', 20, 85);
-    user.unlockedBadges.forEach((bId, i) => {
-      const b = BADGES.find(badge => badge.id === bId);
-      if (b) {
-        doc.text(`• ${b.name}: ${b.description}`, 30, 95 + (i * 7));
-      }
-    });
+    const conclusionText = user.points >= 3000 
+      ? "Usted ha demostrado un juicio ético excepcional, anteponiendo la vida y la integridad humana sobre las metas productivas. Su liderazgo es fundamental para la Planta Vallenar."
+      : "Se recomienda fortalecer la introspección ética y la virtud de la prudencia. Recuerde que el SER profesional precede al HACER corporativo en toda ingeniería de riesgo.";
+    
+    const splitText = doc.splitTextToSize(conclusionText, 150);
+    doc.text(splitText, pageWidth / 2, conclusionY + 18, { align: 'center' });
 
     // Footer
-    const footerY = doc.internal.pageSize.getHeight() - 15;
-    doc.setFontSize(8);
+    const footerY = pageHeight - 15;
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
     doc.setTextColor(150, 150, 150);
     doc.text('CREADO POR: ADRIANA SÁNCHEZ, DOCENTE DE ÉTICA PROFESIONAL, UNIVERSIDAD DE ATACAMA, SEDE VALLENAR, 2026', pageWidth / 2, footerY, { align: 'center' });
 
-    doc.save(`Resultado_Integridad_${user.name || 'Estudiante'}.pdf`);
+    doc.save(`BITACORA_ETICA_${user.name || 'ESTUDIANTE'}.pdf`);
   };
 
   const totalProgress = (user.completedModules.length / MODULES.length) * 100;
@@ -428,6 +535,7 @@ export default function App() {
               onPrev={() => setStep(Math.max(0, step - 1))}
               onBack={() => setCurrentModuleIndex(-2)}
               isLast={currentModuleIndex === MODULES.length - 1}
+              addPoints={addPoints}
             />
           ) : (
             <FinalReport 
@@ -618,13 +726,14 @@ function DashboardView({ user, onSelectModule }: { user: UserState, onSelectModu
   );
 }
 
-function ModuleView({ module, step, onNext, onPrev, onBack, isLast }: { 
+function ModuleView({ module, step, onNext, onPrev, onBack, isLast, addPoints }: { 
   module: Module, 
   step: number, 
   onNext: () => void, 
   onPrev: () => void,
   onBack: () => void,
-  isLast: boolean 
+  isLast: boolean,
+  addPoints: (pts: number) => void
 }) {
   const [isCheckpoint, setIsCheckpoint] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -750,7 +859,7 @@ function ModuleView({ module, step, onNext, onPrev, onBack, isLast }: {
       )}
 
       {module.type === 'activity' && <DilemmaActivity onComplete={onNext} />}
-      {module.type === 'quiz' && <FinalQuiz onComplete={onNext} />}
+      {module.type === 'quiz' && <FinalQuiz onComplete={onNext} addPoints={addPoints} />}
 
       {module.type === 'theory' && !isCheckpoint && (
         <div className="flex gap-4">
@@ -889,52 +998,153 @@ function DilemmaActivity({ onComplete }: { onComplete: () => void }) {
   );
 }
 
-function FinalQuiz({ onComplete }: { onComplete: () => void }) {
+function FinalQuiz({ onComplete, addPoints }: { onComplete: () => void, addPoints: (pts: number) => void }) {
   const [qIndex, setQIndex] = useState(0);
-  const questions = [
-    { 
-      q: "¿Qué es la ceguera moral?", 
-      a: ["Incapacidad física", "Ignorar aspectos éticos por rutina", "Desconocimiento legal"], 
-      correct: 1,
-      explanation: "No es falta de conocimiento, es que la rutina nos 'envejece' el juicio y dejamos de ver el dilema ético frente a nosotros."
+  const [assessmentPoints, setAssessmentPoints] = useState(0);
+  const [showResult, setShowResult] = useState(false);
+
+  const scenario = {
+    title: "El Dilema del Informe de Seguridad",
+    context: "Un gerente de planta solicita omitir un riesgo ergonómico mayor en el informe anual de seguridad para evitar la cancelación de un lucrativo bono económico colectivo que beneficia a todas las familias de los trabajadores de la planta.",
+  };
+
+  const assessmentQuestions = [
+    {
+      id: 1,
+      q: "1. Prioridad de Gestión",
+      a: [
+        "A. Priorizar lo urgente (el bono económico inmediato) sobre lo importante (la dignidad y salud biomecánica futura).",
+        "B. Aplicar la percepción afectiva: comprender que el daño ergonómico es dolor humano real, no solo una estadística aceptable."
+      ],
+      points: [0, 2]
     },
-    { 
-      q: "Principio clave de Industria 5.0:", 
-      a: ["Eficiencia pura", "Reducción de costos", "Antropocentrismo"], 
-      correct: 2,
-      explanation: "La Industria 5.0 devuelve al humano al centro de la producción, priorizando la colaboración hombre-máquina segura."
+    {
+      id: 2,
+      q: "2. Manejo de la Presión",
+      a: [
+        "A. Sufrir de ceguera ante los valores, impulsada por el interés personal colectivo.",
+        "B. Ejercer la virtud de la Prudencia frente a la inmensa presión ejecutiva y social."
+      ],
+      points: [0, 2]
     },
-    { 
-      q: "En T3C, ¿qué se prioriza?", 
-      a: ["Lucro financiero", "Protección de la vida", "Imagen corporativa"], 
-      correct: 1,
-      explanation: "La Contabilidad Tridimensional busca proteger la vida y el ecosistema, entendiendo que el capital financiero es solo una parte de la riqueza."
+    {
+      id: 3,
+      q: "3. Valoración del Trabajador",
+      a: [
+        "A. Tratar al trabajador afectado por el riesgo ergonómico como un simple \"medio\" para asegurar la recompensa.",
+        "B. Mantener el orden estructural: preferir SER honesto antes que HACER lo corporativamente conveniente."
+      ],
+      points: [0, 2]
+    },
+    {
+      id: 4,
+      q: "4. Propósito del Liderazgo",
+      a: [
+        "A. Operar desde la capa externa del DECIR y HACER, traicionando el SER.",
+        "B. Proteger el fin supremo de la empresa: la vida lograda."
+      ],
+      points: [0, 2]
     }
   ];
 
-  return (
-    <GlassCard className="space-y-8">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={qIndex}
-          initial={{ opacity: 0, x: 10 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -10 }}
+  const handleSelection = (optionIdx: number) => {
+    const earned = assessmentQuestions[qIndex].points[optionIdx];
+    setAssessmentPoints(prev => prev + earned);
+
+    if (qIndex < assessmentQuestions.length - 1) {
+      setQIndex(qIndex + 1);
+    } else {
+      setShowResult(true);
+    }
+  };
+
+  if (showResult) {
+    const isIntegrity = assessmentPoints >= 6;
+    return (
+      <GlassCard className="space-y-8 p-10 text-center animate-in fade-in zoom-in duration-500">
+        <div className="space-y-4">
+          <div className="mx-auto w-20 h-20 bg-accent/20 rounded-full flex items-center justify-center text-accent">
+            <Award size={40} />
+          </div>
+          <h3 className="text-3xl font-black uppercase tracking-tighter italic">Resultado: {assessmentPoints} Pts</h3>
+        </div>
+
+        <div className="p-6 glass rounded-3xl bg-white/5 border-primary/20">
+          {isIntegrity ? (
+            <div className="space-y-4">
+              <h4 className="text-secondary font-bold uppercase tracking-widest text-xl">Ingeniero Íntegro y Fiel</h4>
+              <p className="text-white/80 leading-relaxed italic">
+                Usted es un ingeniero en prevención Íntegro y Fiel a sus valores. Su postura aligera la «pesadumbre de vivir» a largo plazo y evita la autodestrucción moral del profesional.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <h4 className="text-accent font-bold uppercase tracking-widest text-xl">Ética de la Obediencia</h4>
+              <p className="text-white/80 leading-relaxed italic">
+                Usted mantiene una ética en tercera persona de la Obediencia y la conveniencia utilitarista. Esta postura prioriza el beneficio inmediato y el cumplimiento externo sobre la integridad del SER.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <button 
+          onClick={() => {
+            addPoints(assessmentPoints * 100); // Scale points for global score
+            onComplete();
+          }}
+          className="w-full glass-button py-6 justify-center bg-primary text-slate-950 font-black uppercase tracking-widest text-xl shadow-lg shadow-primary/20"
         >
-          <QuestionCard 
-            question={questions[qIndex]} 
-            title={`Pregunta ${qIndex + 1} de ${questions.length}`}
-            onAnswer={(correct) => {
-              if (qIndex < questions.length - 1) {
-                setQIndex(qIndex + 1);
-              } else {
-                onComplete();
-              }
-            }}
-          />
-        </motion.div>
-      </AnimatePresence>
-    </GlassCard>
+          Finalizar Auditoría <ChevronRight />
+        </button>
+      </GlassCard>
+    );
+  }
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-700">
+      <div className="space-y-4 text-center">
+        <h2 className="text-3xl font-black uppercase tracking-tighter italic text-accent">{scenario.title}</h2>
+        <div className="glass p-6 rounded-3xl border-primary/20 bg-primary/5 space-y-3">
+          <p className="text-white/70 text-sm leading-relaxed italic font-medium">"{scenario.context}"</p>
+          <div className="pt-3 border-t border-white/5">
+            <p className="text-[10px] text-primary/80 uppercase tracking-widest font-black">Instrucciones</p>
+            <p className="text-xs text-white/50 italic">Para cada una de las siguientes cuatro situaciones, elija la postura (A o B) que mejor represente su decisión o visión profesional.</p>
+          </div>
+        </div>
+      </div>
+
+      <GlassCard className="space-y-8 border-white/10">
+        <div className="space-y-2 text-center">
+          <span className="text-[10px] uppercase font-mono tracking-[0.5em] text-white/40">Fase de Evaluación Professional</span>
+          <h3 className="text-2xl font-bold italic">{assessmentQuestions[qIndex].q}</h3>
+          <p className="text-[10px] text-white/30 italic">Elija la postura que mejor represente su decisión o visión profesional.</p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+          {assessmentQuestions[qIndex].a.map((ans, i) => (
+            <button 
+              key={i}
+              onClick={() => handleSelection(i)}
+              className="glass-button p-6 text-left group hover:bg-primary/10 border-white/10 hover:border-primary/30 transition-all h-auto block"
+            >
+              <p className="text-lg font-medium leading-normal group-hover:text-primary transition-colors italic">{ans}</p>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex justify-center gap-2">
+          {assessmentQuestions.map((_, i) => (
+            <div 
+              key={i}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-500",
+                i === qIndex ? "w-12 bg-primary" : i < qIndex ? "w-4 bg-secondary" : "w-4 bg-white/10"
+              )}
+            />
+          ))}
+        </div>
+      </GlassCard>
+    </div>
   );
 }
 
