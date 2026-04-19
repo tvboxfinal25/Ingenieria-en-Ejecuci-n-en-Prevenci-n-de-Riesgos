@@ -1118,7 +1118,7 @@ function IntroSection({ onStart }: { onStart: (name: string, avatar: string) => 
 
       <div className="glass p-6 sm:p-8 rounded-3xl space-y-6">
         <div className="space-y-2">
-          <label htmlFor="student-name" className="text-[10px] uppercase font-bold tracking-widest text-primary text-left block">IDENTIFICACIÓN CREADENCIAL</label>
+          <label htmlFor="student-name" className="text-[10px] uppercase font-bold tracking-widest text-primary text-left block">IDENTIFICACIÓN CREDENCIAL</label>
           <input 
             id="student-name"
             type="text" 
