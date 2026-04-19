@@ -495,7 +495,9 @@ export default function App() {
   };
 
   const completeModule = (moduleId: string) => {
-    if (!user.completedModules.includes(moduleId)) {
+    setUser(prev => {
+      if (prev.completedModules.includes(moduleId)) return prev;
+
       playSound('success');
       confetti({
         particleCount: 100,
@@ -504,30 +506,29 @@ export default function App() {
         colors: ['#3b82f6', '#10b981', '#f59e0b']
       });
 
-      const bonusPoints = currentModule?.type === 'activity' ? 500 : 200;
+      const moduleType = MODULES.find(m => m.id === moduleId)?.type;
+      const bonusPoints = moduleType === 'activity' ? 500 : 200;
       
-      setUser(prev => {
-        const newBadges = [...prev.unlockedBadges];
-        const badgeId = getBadgeForModule(moduleId);
-        if (badgeId && !newBadges.includes(badgeId)) {
-          newBadges.push(badgeId);
-          playSound('badge');
-        }
+      const newBadges = [...prev.unlockedBadges];
+      const badgeId = getBadgeForModule(moduleId);
+      if (badgeId && !newBadges.includes(badgeId)) {
+        newBadges.push(badgeId);
+        playSound('badge');
+      }
 
-        // Secret Achievement: Flawless
-        if (moduleId === 'final-quiz' && !prev.hasFailedAnyCheckpoint && !newBadges.includes('flawless')) {
-          newBadges.push('flawless');
-          playSound('badge');
-        }
+      // Secret Achievement: Flawless
+      if (moduleId === 'final-quiz' && !prev.hasFailedAnyCheckpoint && !newBadges.includes('flawless')) {
+        newBadges.push('flawless');
+        playSound('badge');
+      }
 
-        return {
-          ...prev,
-          points: prev.points + bonusPoints,
-          completedModules: [...prev.completedModules, moduleId],
-          unlockedBadges: newBadges
-        };
-      });
-    }
+      return {
+        ...prev,
+        points: prev.points + bonusPoints,
+        completedModules: [...prev.completedModules, moduleId],
+        unlockedBadges: newBadges
+      };
+    });
   };
 
   const getBadgeForModule = (moduleId: string) => {
@@ -729,7 +730,7 @@ export default function App() {
     doc.save(`BITACORA_ETICA_${user.name || 'ESTUDIANTE'}.pdf`);
   };
 
-  const totalProgress = (user.completedModules.length / MODULES.length) * 100;
+  const totalProgress = (MODULES.filter(m => user.completedModules.includes(m.id)).length / MODULES.length) * 100;
 
   return (
     <div className={cn(
