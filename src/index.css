@@ -9,10 +9,26 @@
 
 @layer base {
   body {
-    @apply text-white min-h-screen overflow-x-hidden;
+    @apply text-white min-h-screen overflow-x-hidden focus:outline-none;
     background: radial-gradient(circle at top left, #1a2a6c, #b21f1f, #fdbb2d);
     background-attachment: fixed;
   }
+  
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-slate-950;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 .glass {
